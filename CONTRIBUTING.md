@@ -1,6 +1,8 @@
 # Contributing to Scripts Repository
 
-Thank you for your interest in contributing to our Scripts repository! This document provides specific guidelines for contributing scripts across different programming languages.
+Thank you for your interest in contributing to our Scripts repository!
+
+This document provides specific guidelines for contributing scripts across different programming languages.
 
 ## Quick Start
 

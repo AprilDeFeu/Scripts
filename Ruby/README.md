@@ -15,6 +15,7 @@ This directory contains Ruby scripts organized by category and use-case.
 ## Contributing
 
 When adding a new Ruby script:
+
 1. Choose the appropriate category directory
 2. Choose the appropriate subcategory (use-case) within that category
 3. Follow Ruby style guidelines and conventions

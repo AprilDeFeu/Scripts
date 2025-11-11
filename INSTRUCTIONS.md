@@ -2,7 +2,9 @@
 
 ## Repository Overview
 
-This repository serves as a comprehensive collection of scripts across multiple programming languages, organized using a systematic three-tier hierarchy for easy navigation and contribution.
+This repository serves as a comprehensive collection of scripts across multiple programming languages.
+
+It is organized using a systematic three-tier hierarchy for easy navigation and contribution.
 
 ## Repository Structure
 
@@ -320,4 +322,6 @@ This repository is licensed under the MIT License. See the `LICENSE` file for de
 
 ---
 
-*This instruction document helps maintain consistency and quality across all scripts in the repository. Please follow these guidelines to ensure the repository remains well-organized and useful for all contributors.*
+*This instruction document helps maintain consistency and quality across all scripts in the repository.*
+
+*Please follow these guidelines to ensure the repository remains well-organized and useful for all contributors.*
