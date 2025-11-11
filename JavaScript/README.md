@@ -15,6 +15,7 @@ This directory contains JavaScript/Node.js scripts organized by category and use
 ## Contributing
 
 When adding a new JavaScript script:
+
 1. Choose the appropriate category directory
 2. Choose the appropriate subcategory (use-case) within that category
 3. Follow JavaScript best practices and common style guidelines
