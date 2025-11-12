@@ -181,7 +181,8 @@ Invoke-Step -Title 'CHKDSK read-only scan and schedule repair if needed' -Script
         elseif ($chkdsk -match 'Windows found problems') {
             Write-Output 'Errors found. Scheduling repair on next reboot.'
             if (Confirm-Action -Target "Schedule CHKDSK repair on $sysDrive" -Action "Schedule CHKDSK /F /R") {
-                cmd /c "echo Y | chkdsk $sysDrive /F /R" 2>&1 | Out-Null
+                $repairOutput = cmd /c "chkdsk $sysDrive /F /R" 2>&1 | Out-String
+                Write-Output $repairOutput
                 Write-Output 'Repair scheduled. A reboot will be required to complete the repair.'
             }
         }
