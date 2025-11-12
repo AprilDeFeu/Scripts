@@ -46,6 +46,10 @@ $ErrorActionPreference = 'Stop'
 
 function Get-LogFilePath {
     $userDocs = [Environment]::GetFolderPath('MyDocuments')
+    # Fallback to temp directory if MyDocuments is not available
+    if ([string]::IsNullOrWhiteSpace($userDocs)) {
+        $userDocs = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    }
     $logRoot = Join-Path $userDocs 'SystemLogs'
     if (-not (Test-Path $logRoot)) { New-Item -Path $logRoot -ItemType Directory -Force | Out-Null }
     $timestamp = (Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')
