@@ -17,6 +17,7 @@ repos:
     rev: v0.41.0
     hooks:
     -   id: markdownlint
+        exclude: '^\.github/instructions/.*\.md$'
 -   repo: https://github.com/koalaman/shellcheck-precommit
     rev: v0.10.0
     hooks:
@@ -30,8 +31,9 @@ repos:
     hooks:
     -   id: psscriptanalyzer
         name: psscriptanalyzer
-        entry: pwsh -Command "Invoke-ScriptAnalyzer -Path ."
-        language: "powershell"
-        types: ["powershell"]
+        entry: pwsh -Command "Invoke-ScriptAnalyzer -Path . -Recurse -ExcludeRule PSAvoidUsingWriteHost"
+        language: system
+        types: [powershell]
+        pass_filenames: false
         # Exclude the test file itself from analysis for now
         exclude: '^tests/unit/PowerShell/system-maintenance.Tests.ps1$'

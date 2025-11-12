@@ -9,7 +9,7 @@
     image health scans (SFC/DISM), service checks, Defender scans/status, and
     basic network troubleshooting. Designed to be conservative by default and
     supports -WhatIf and -Confirm via SupportsShouldProcess.
-    
+
     Note: When RunWindowsUpdate is specified, PSGallery will be set as a trusted
     repository to install the PSWindowsUpdate module.
 
@@ -113,20 +113,20 @@ function Invoke-Step {
                 $output += $_
             }
         }
-        
+
         # Log standard output
         if ($output.Count -gt 0) {
             $outputString = ($output | Out-String).Trim()
             if ($outputString -ne '') { Write-Log $outputString }
         }
-        
+
         # Log errors separately
         if ($errors.Count -gt 0) {
             foreach ($err in $errors) {
                 Write-Log -Message "ERROR: $($err.Exception.Message)" -Level 'ERROR'
             }
         }
-        
+
         Write-Log "END: $Title"
     }
     catch {
@@ -201,7 +201,7 @@ Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Cle
     try {
         $paths = @($env:TEMP, "$env:WINDIR\Temp", "$env:LOCALAPPDATA\Temp") | Where-Object { Test-Path $_ }
         $threshold = (Get-Date).AddDays(-1 * [int]$MaxTempFileAgeDays)
-        
+
         foreach ($p in $paths) {
             Write-Output "Cleaning: $p"
             # Confirm at directory level for better performance
@@ -213,7 +213,7 @@ Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Cle
                 }
             }
         }
-        
+
         # Windows Update download cache
         $wuCache = "$env:WINDIR\SoftwareDistribution\Download"
         if (Test-Path $wuCache) {
@@ -221,38 +221,38 @@ Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Cle
                 # Stop services using proper PowerShell cmdlets
                 $wuService = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
                 $bitsService = Get-Service -Name bits -ErrorAction SilentlyContinue
-                
+
                 $wuWasRunning = $false
                 $bitsWasRunning = $false
-                
+
                 if ($wuService -and $wuService.Status -eq 'Running') {
                     $wuWasRunning = $true
                     Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
                     Write-Output 'Stopped Windows Update service'
                 }
-                
+
                 if ($bitsService -and $bitsService.Status -eq 'Running') {
                     $bitsWasRunning = $true
                     Stop-Service -Name bits -Force -ErrorAction SilentlyContinue
                     Write-Output 'Stopped BITS service'
                 }
-                
+
                 Get-ChildItem $wuCache -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
                 Write-Output 'Cleared Windows Update download cache'
-                
+
                 # Restart services if they were running
                 if ($bitsWasRunning) {
                     Start-Service -Name bits -ErrorAction SilentlyContinue
                     Write-Output 'Restarted BITS service'
                 }
-                
+
                 if ($wuWasRunning) {
                     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
                     Write-Output 'Restarted Windows Update service'
                 }
             }
         }
-        
+
         # Delivery Optimization
         $doPath = "$env:ProgramData\Microsoft\Windows\DeliveryOptimization\Cache"
         if (Test-Path $doPath) {
@@ -279,12 +279,12 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
         } catch {
             Write-Output 'Unable to query physical disks. Will use default optimization method.'
         }
-        
+
         $vols = Get-Volume -FileSystemLabel * -ErrorAction SilentlyContinue
         foreach ($v in $vols) {
             if (-not $v.DriveLetter) { continue }
             $letter = $v.DriveLetter
-            
+
             # Determine if this volume is on an SSD
             $isSSD = $false
             try {
@@ -301,7 +301,7 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
             } catch {
                 Write-Output "Could not determine disk type for ${letter}:, using default optimization"
             }
-            
+
             if ($isSSD) {
                 if (Confirm-Action -Target "${letter}: (SSD)" -Action 'ReTrim volume') {
                     Optimize-Volume -DriveLetter $letter -ReTrim -Verbose:$false | Out-Null
