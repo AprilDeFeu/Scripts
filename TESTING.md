@@ -10,7 +10,7 @@ This repository uses `pre-commit` to run a suite of linters and formatters befor
 
 **Installation:**
 
-1. Install Python 3.9+ and pip.
+1. Install Python 3.9 or newer (Python 3.11 recommended, as used in CI) and pip.
 2. Install `pre-commit`:
 
    ```bash
