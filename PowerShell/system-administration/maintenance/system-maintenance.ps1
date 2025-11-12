@@ -381,11 +381,11 @@ Invoke-Step -Title 'Firewall & protection status' -ScriptBlock {
 Invoke-Step -Title 'Network reset (soft) and DNS flush' -Destructive -ConfirmTarget 'Reset network configuration (may disrupt connectivity)' -ScriptBlock {
     try {
         Write-Output 'Flushing DNS cache...'
-        ipconfig /flushdns | Out-String
+        ipconfig /flushdns
         Write-Output 'Resetting Winsock catalog...'
-        netsh winsock reset | Out-String
+        netsh winsock reset
         Write-Output 'Resetting IP configuration...'
-        netsh int ip reset | Out-String
+        netsh int ip reset
         Write-Output 'Network reset completed. A reboot may be required for changes to take full effect.'
     } catch {
         "Network reset error: $($_.Exception.Message)"
