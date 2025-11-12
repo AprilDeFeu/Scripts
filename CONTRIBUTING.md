@@ -121,13 +121,15 @@ Follow this decision tree to place your script correctly:
 
 ## Test-Focused Development
 
-As a repository valued by QA, we expect a rigorous, test-focused mentality. Every script should be developed with the assumption that it will be scrutinized for robustness and reliability.
+As a repository valued by QA, we expect a rigorous, test-focused mentality. Every script should be developed
+with the assumption that it will be scrutinized for robustness and reliability.
 
 ### Guiding Principles
 - **Write Tests First (or alongside):** Don't write code without a clear idea of how you will test it.
 - **Think Like an Attacker (and a User):** Consider how your script could be misused, intentionally or accidentally.
 - **Automate Everything:** All tests should be runnable from the command line and in CI.
-- **Keep Scripts Standalone:** Scripts must remain self-contained and runnable without the test framework. Test files are external and should import or execute the script to be tested.
+- **Keep Scripts Standalone:** Scripts must remain self-contained and runnable without the test framework.
+  Test files are external and should import or execute the script to be tested.
 
 ### Input Validation
 
@@ -149,13 +151,15 @@ As a repository valued by QA, we expect a rigorous, test-focused mentality. Ever
 Before submitting, ensure your tests cover the following scenarios:
 
 - [ ] **Happy Path:** Does the script work as expected with valid, typical inputs?
-- [ ] **Invalid Inputs:** How does the script handle incorrect, malformed, or unexpected inputs? (e.g., wrong data types, non-existent files).
+- [ ] **Invalid Inputs:** How does the script handle incorrect, malformed, or unexpected inputs?
+  (e.g., wrong data types, non-existent files).
 - [ ] **Edge Cases:**
     - [ ] Empty or null inputs.
     - [ ] Very large inputs (e.g., large files, many items).
     - [ ] Zero-value inputs (e.g., `0`, `""`).
     - [ ] Inputs with special characters or different encodings.
-- [ ] **Permissions:** Does the script fail gracefully if it lacks the required permissions for a file, directory, or network resource?
+- [ ] **Permissions:** Does the script fail gracefully if it lacks the required permissions for a file,
+  directory, or network resource?
 - [ ] **Dependencies:** How does the script behave if a required dependency (module, command-line tool) is missing?
 - [ ] **Concurrency:** If applicable, is the script safe to run multiple times simultaneously? Does it handle file locking?
 
@@ -215,7 +219,7 @@ Consider testing on:
     Author: Your Name
     Version: 1.0
     Last Modified: YYYY-MM-DD
-    
+
 .LINK
     https://github.com/YourRepo/Scripts
 #>
@@ -241,7 +245,7 @@ Requirements:
 
 Usage:
     python script_name.py [arguments]
-    
+
 Examples:
     python script_name.py --input file.txt --output result.txt
     python script_name.py --help

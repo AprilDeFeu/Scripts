@@ -28,7 +28,7 @@
     Version: 1.0
     Created: YYYY-MM-DD
     Last Modified: YYYY-MM-DD
-    
+
     Prerequisites:
     - PowerShell 5.1 or later
     - Administrator privileges
@@ -42,10 +42,10 @@ param(
     [Parameter(Mandatory = $true, HelpMessage = "Description of the parameter")]
     [ValidateNotNullOrEmpty()]
     [string]$ParameterName,
-    
+
     [Parameter(Mandatory = $false)]
     [switch]$Quiet,
-    
+
     [Parameter(Mandatory = $false)]
     [switch]$WhatIf
 )
@@ -82,15 +82,15 @@ function Write-Error {
 # Main script logic
 try {
     Write-Info "Starting script execution..."
-    
+
     # Validate prerequisites
     if ($WhatIf) {
         Write-Info "WhatIf mode enabled - no changes will be made"
     }
-    
+
     # Main script functionality goes here
     Write-Info "Processing parameter: $ParameterName"
-    
+
     # Example of conditional execution
     if ($WhatIf) {
         Write-Info "Would perform action with parameter: $ParameterName"
@@ -99,7 +99,7 @@ try {
         # Actual execution logic here
         Write-Info "Performing action with parameter: $ParameterName"
     }
-    
+
     Write-Success "Script completed successfully"
 }
 catch {

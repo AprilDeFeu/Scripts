@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Install markdownlint
         run: npm install --global markdownlint-cli@0.39.0
 
@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Validate PowerShell scripts
         run: |
           # Find PowerShell scripts and validate syntax
@@ -36,13 +36,13 @@ jobs:
             # pwsh -NoProfile -NonInteractive -Command "& { try { [System.Management.Automation.PSParser]::Tokenize((Get-Content '$script' -Raw), [ref]\$null) | Out-Null; Write-Host 'OK: $script' } catch { Write-Error 'SYNTAX ERROR in $script: $_'; exit 1 } }"
           done
         continue-on-error: true
-        
+
       - name: Validate Python scripts
         run: |
           # Install Python and check syntax
           python3 -m py_compile $(find . -name "*.py" -type f) || true
         continue-on-error: true
-        
+
       - name: Validate Bash scripts
         run: |
           # Check bash scripts with shellcheck if available
@@ -59,11 +59,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Validate repository structure
         run: |
           echo "Checking repository structure..."
-          
+
           # Check for required top-level files
           required_files=("README.md" "LICENSE" "INSTRUCTIONS.md" "CONTRIBUTING.md")
           for file in "${required_files[@]}"; do
@@ -74,7 +74,7 @@ jobs:
               echo "✓ Found: $file"
             fi
           done
-          
+
           # Check for expected language directories
           expected_dirs=("Bash" "Go" "JavaScript" "PowerShell" "Python" "Ruby")
           for dir in "${expected_dirs[@]}"; do
@@ -84,7 +84,7 @@ jobs:
               echo "✓ Found: $dir/"
             fi
           done
-          
+
           # Check category structure within language directories
           categories=("automation" "data-processing" "miscellaneous" "networking" "system-administration" "text-processing" "web-scraping")
           for lang_dir in "${expected_dirs[@]}"; do
@@ -96,5 +96,5 @@ jobs:
               done
             fi
           done
-          
+
           echo "Repository structure validation complete"
