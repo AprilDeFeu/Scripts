@@ -4,7 +4,7 @@ This repository prefers plain Git for local operations and the GitHub web UI for
 creating pull requests. This note documents that preference so contributors and
 automation respect the chosen workflow.
 
-Recommendations
+## Recommendations
 
 - Use git to create branches, stage, commit, and push. Example:
 
@@ -33,7 +33,7 @@ git push -u origin fix/my-change
 - If you integrate other tools (for example GitKraken or GitHub Apps), only do
   so after confirming credentials and access are explicitly authorized.
 
-Why this preference
+## Why this preference
 
 - Plain `git` is universally available and works in CI and local shells without
   adding additional tooling requirements.
