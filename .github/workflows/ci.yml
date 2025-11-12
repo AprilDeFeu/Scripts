@@ -30,7 +30,6 @@ jobs:
   test-powershell:
     name: Test PowerShell
     runs-on: windows-latest
-    needs: lint
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
