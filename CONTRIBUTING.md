@@ -163,6 +163,9 @@ Before submitting, ensure your tests cover the following scenarios:
 - [ ] **Dependencies:** How does the script behave if a required dependency (module, command-line tool) is missing?
 - [ ] **Concurrency:** If applicable, is the script safe to run multiple times simultaneously? Does it handle file locking?
 
+**Example:** See `tests/unit/PowerShell/system-maintenance.Tests.ps1` for a comprehensive example that demonstrates testing
+for all these scenarios including invalid inputs, edge cases, permissions, dependencies, and error handling.
+
 ### Basic Testing
 
 All scripts must be tested with:
