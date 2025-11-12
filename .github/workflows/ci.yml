@@ -41,6 +41,8 @@ jobs:
 
       - name: Run Pester Tests
         shell: pwsh
+        env:
+          SCRIPTS_ROOT: ${{ github.workspace }}
         run: |
           $result = Invoke-Pester -Path 'tests/unit/PowerShell' -PassThru
           if ($result.FailedCount -gt 0) {
