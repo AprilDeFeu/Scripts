@@ -35,5 +35,3 @@ repos:
         language: system
         types: [powershell]
         pass_filenames: false
-        # Exclude the test file itself from analysis for now
-        exclude: '^tests/unit/PowerShell/system-maintenance.Tests.ps1$'
