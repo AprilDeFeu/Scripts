@@ -11,7 +11,11 @@ BeforeAll {
     if (-not $testDir) {
         $testDir = Get-Location
     }
-    $script:scriptPath = Join-Path $testDir "../../../PowerShell/system-administration/maintenance/system-maintenance.ps1" | Resolve-Path | Select-Object -ExpandProperty Path
+    $relativePath = Join-Path $testDir "../../../PowerShell/system-administration/maintenance/system-maintenance.ps1"
+    if (-not (Test-Path $relativePath)) {
+        throw "Script not found at: $relativePath"
+    }
+    $script:scriptPath = Resolve-Path $relativePath | Select-Object -ExpandProperty Path
 }
 
 Describe "system-maintenance.ps1" {
