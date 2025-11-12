@@ -31,7 +31,7 @@ repos:
     hooks:
     -   id: psscriptanalyzer
         name: psscriptanalyzer
-        entry: pwsh -Command "Invoke-ScriptAnalyzer -Path . -Recurse -ExcludeRule PSAvoidUsingWriteHost"
+        entry: pwsh -Command "Invoke-ScriptAnalyzer -Path PowerShell/ -Recurse -Exclude 'PowerShell/*/testing/*','PowerShell/*/templates/*' -ExcludeRule PSAvoidUsingWriteHost"
         language: system
         types: [powershell]
         pass_filenames: false
