@@ -54,17 +54,19 @@ function Get-LogFilePath {
 
 $script:LogFile = Get-LogFilePath
 
+# Store the script-level PSCmdlet for use in nested scriptblocks
+$script:ScriptPSCmdlet = $PSCmdlet
+
 # Helper to perform a confirmation check that works even when invoked inside
-# nested scriptblocks. Provides access to the parent's ShouldProcess method.
+# nested scriptblocks. Uses the script-scoped PSCmdlet reference.
 function Confirm-Action {
     param(
         [string]$Target,
         [string]$Action = 'Perform operation'
     )
-    # Access the parent scope's $PSCmdlet to use ShouldProcess
-    $parentPSCmdlet = Get-Variable -Name PSCmdlet -Scope 1 -ValueOnly -ErrorAction SilentlyContinue
-    if ($null -ne $parentPSCmdlet) {
-        return $parentPSCmdlet.ShouldProcess($Target, $Action)
+    # Use the script-scoped PSCmdlet reference
+    if ($null -ne $script:ScriptPSCmdlet) {
+        return $script:ScriptPSCmdlet.ShouldProcess($Target, $Action)
     }
     # Fallback: allow the action if PSCmdlet is not available
     return $true
@@ -272,7 +274,7 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
         $physicalDisks = @{}
         try {
             Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
-                $physicalDisks[$_.DeviceId] = $_
+                $physicalDisks[$_.Number] = $_
             }
         } catch {
             Write-Output 'Unable to query physical disks. Will use default optimization method.'
