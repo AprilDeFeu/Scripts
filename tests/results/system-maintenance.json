@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="14" errors="0" failures="14" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2025-11-14" time="08:41:29">
+  <environment clr-version="8.0.21" machine-name="runnervmw9dnm" os-version="6.11.0-1018-azure" platform="Linux" cwd="/home/runner/work/Scripts/Scripts" nunit-version="2.5.8.0" user-domain="" user="runner" />
+  <culture-info current-culture="" current-uiculture="" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Failure" success="False" time="0.4726" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="/home/runner/work/Scripts/Scripts/tests/unit/PowerShell/system-maintenance.Tests.ps1" executed="True" result="Failure" success="False" time="0.4726" asserts="0" description="/home/runner/work/Scripts/Scripts/tests/unit/PowerShell/system-maintenance.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="system-maintenance.ps1" executed="True" result="Failure" success="False" time="0.1144" asserts="0" description="system-maintenance.ps1">
+            <results>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Basic Script Validation" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Basic Script Validation">
+                <results>
+                  <test-case description="should be a valid script file" name="system-maintenance.ps1.Basic Script Validation.should be a valid script file" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should have comment-based help" name="system-maintenance.ps1.Basic Script Validation.should have comment-based help" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should support -WhatIf" name="system-maintenance.ps1.Basic Script Validation.should support -WhatIf" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Invalid Inputs" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Invalid Inputs">
+                <results>
+                  <test-case description="should reject MaxTempFileAgeDays below minimum (negative values)" name="system-maintenance.ps1.Invalid Inputs.should reject MaxTempFileAgeDays below minimum (negative values)" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should reject MaxTempFileAgeDays above maximum (&gt; 3650)" name="system-maintenance.ps1.Invalid Inputs.should reject MaxTempFileAgeDays above maximum (&gt; 3650)" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should reject non-numeric MaxTempFileAgeDays" name="system-maintenance.ps1.Invalid Inputs.should reject non-numeric MaxTempFileAgeDays" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Permissions and Prerequisites" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Permissions and Prerequisites">
+                <results>
+                  <test-case description="should have #Requires -RunAsAdministrator directive" name="system-maintenance.ps1.Permissions and Prerequisites.should have #Requires -RunAsAdministrator directive" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Parameter Validation" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Parameter Validation">
+                <results>
+                  <test-case description="should use default value when MaxTempFileAgeDays not specified" name="system-maintenance.ps1.Parameter Validation.should use default value when MaxTempFileAgeDays not specified" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.WhatIf Support (Confirming Non-Destructive Preview)" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.WhatIf Support (Confirming Non-Destructive Preview)">
+                <results>
+                  <test-case description="should have ConfirmImpact set appropriately" name="system-maintenance.ps1.WhatIf Support (Confirming Non-Destructive Preview).should have ConfirmImpact set appropriately" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Logging and Output" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Logging and Output">
+                <results>
+                  <test-case description="should create log file path using Get-LogFilePath function" name="system-maintenance.ps1.Logging and Output.should create log file path using Get-LogFilePath function" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should handle environment where MyDocuments is not available" name="system-maintenance.ps1.Logging and Output.should handle environment where MyDocuments is not available" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="system-maintenance.ps1.Error Handling" executed="True" result="Failure" success="False" time="0" asserts="0" description="system-maintenance.ps1.Error Handling">
+                <results>
+                  <test-case description="should use StrictMode" name="system-maintenance.ps1.Error Handling.should use StrictMode" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should set ErrorActionPreference appropriately" name="system-maintenance.ps1.Error Handling.should set ErrorActionPreference appropriately" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                  <test-case description="should include try-catch blocks for error handling" name="system-maintenance.ps1.Error Handling.should include try-catch blocks for error handling" time="0" asserts="0" success="False" result="Failure" executed="True">
+                    <failure>
+                      <message>This test should run but it did not. Most likely a setup in some parent block failed.</message>
+                      <stack-trace />
+                    </failure>
+                  </test-case>
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

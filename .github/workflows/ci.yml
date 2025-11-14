@@ -42,14 +42,14 @@ jobs:
           if (Test-Path $resultsPath) {
             $fileAge = (Get-Date) - (Get-Item $resultsPath).LastWriteTime
             if ($fileAge.TotalDays -lt 2) {
-              Write-Host "::set-output name=found::true"
+              echo "found=true" >> $env:GITHUB_OUTPUT
             } else {
               Write-Host "Test results are too old."
-              Write-Host "::set-output name=found::false"
+              echo "found=false" >> $env:GITHUB_OUTPUT
             }
           } else {
             Write-Host "No local test results found."
-            Write-Host "::set-output name=found::false"
+            echo "found=false" >> $env:GITHUB_OUTPUT
           }
 
       - name: Use local test results if available
