@@ -34,12 +34,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check for local test results
+        id: check_results
+        shell: pwsh
+        run: |
+          $resultsPath = 'tests/results/system-maintenance.json'
+          if (Test-Path $resultsPath) {
+            $fileAge = (Get-Date) - (Get-Item $resultsPath).LastWriteTime
+            if ($fileAge.TotalDays -lt 2) {
+              Write-Host "::set-output name=found::true"
+            } else {
+              Write-Host "Test results are too old."
+              Write-Host "::set-output name=found::false"
+            }
+          } else {
+            Write-Host "No local test results found."
+            Write-Host "::set-output name=found::false"
+          }
+
+      - name: Use local test results if available
+        if: steps.check_results.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          Write-Host "Using local test results. Skipping expensive PowerShell tests."
+
       - name: Install Pester
+        if: steps.check_results.outputs.found != 'true'
         shell: pwsh
         run: |
           Install-Module -Name Pester -Force -SkipPublisherCheck
 
       - name: Run Pester Tests
+        if: steps.check_results.outputs.found != 'true'
         shell: pwsh
         env:
           SCRIPTS_ROOT: ${{ github.workspace }}

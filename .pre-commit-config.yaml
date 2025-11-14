@@ -35,3 +35,9 @@ repos:
         language: system
         types: [powershell]
         pass_filenames: false
+    -   id: powershell-pester-tests
+        name: powershell-pester-tests
+        entry: pwsh .githooks/pre-commit.ps1
+        language: system
+        types: [powershell]
+        pass_filenames: false

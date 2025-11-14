@@ -38,7 +38,7 @@
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [switch] $RunWindowsUpdate,
-    [ValidateRange(0,3650)][int] $MaxTempFileAgeDays = 7
+    [ValidateRange(0, 3650)][int] $MaxTempFileAgeDays = 7
 )
 
 Set-StrictMode -Version Latest
@@ -58,24 +58,18 @@ function Get-LogFilePath {
 
 $script:LogFile = Get-LogFilePath
 
-# Store the script-level PSCmdlet for use in nested scriptblocks
-$script:ScriptPSCmdlet = $PSCmdlet
+
+# Store the script-level PSCmdlet for use in nested scriptblocks (set in Begin block)
+$script:ScriptPSCmdlet = $null
+
+Begin {
+    if ($null -eq $script:ScriptPSCmdlet -and $null -ne $PSCmdlet) {
+        $script:ScriptPSCmdlet = $PSCmdlet
+    }
+}
 
 # Helper to perform a confirmation check that works even when invoked inside
 # nested scriptblocks. Uses the script-scoped PSCmdlet reference.
-function Confirm-Action {
-    param(
-        [string]$Target,
-        [string]$Action = 'Perform operation'
-    )
-    # Use the script-scoped PSCmdlet reference
-    if ($null -ne $script:ScriptPSCmdlet) {
-        return $script:ScriptPSCmdlet.ShouldProcess($Target, $Action)
-    }
-    # Fallback: allow the action if PSCmdlet is not available
-    return $true
-}
-
 function Write-Log {
     [CmdletBinding()]
     param(
@@ -102,7 +96,7 @@ function Invoke-Step {
     Write-Log "BEGIN: $Title"
     try {
         if ($Destructive.IsPresent -and $ConfirmTarget) {
-            if (-not (Confirm-Action -Target $ConfirmTarget -Action $Title)) {
+            if (-not ($PSCmdlet.ShouldProcess($ConfirmTarget, $Title))) {
                 Write-Log -Message "SKIP: $Title (not confirmed)" -Level 'WARN'
                 return
             }
@@ -113,7 +107,8 @@ function Invoke-Step {
         & $ScriptBlock 2>&1 | ForEach-Object {
             if ($_ -is [System.Management.Automation.ErrorRecord]) {
                 $errors += $_
-            } else {
+            }
+            else {
                 $output += $_
             }
         }
@@ -139,6 +134,43 @@ function Invoke-Step {
 }
 
 Write-Log "Starting system maintenance and health checks. Params: RunWindowsUpdate=$RunWindowsUpdate, MaxTempFileAgeDays=$MaxTempFileAgeDays"
+
+# --- Destructive Mode Selection ---
+$DestructiveMode = $false
+$DestructiveExplanation = @"
+==================== DESTRUCTIVE MODE WARNING ====================
+This script can perform several potentially destructive operations:
+
+1. Disk cleanup (Temp, Cache):
+   - Deletes files from system/user temp folders and Windows Update/Delivery Optimization caches.
+   - Danger: May remove files needed by some applications or pending updates.
+2. Network reset:
+   - Resets Winsock, IP stack, and flushes DNS.
+   - Danger: May disrupt network connectivity and require a reboot.
+3. CHKDSK repair:
+   - Schedules disk repair on next reboot if errors are found.
+   - Danger: Can cause data loss if disk is failing or interrupted.
+
+By default, these steps are run in safe (non-destructive) mode. To enable all destructive operations, choose 'Destructive' when prompted.
+==================================================================
+"@
+
+# Only prompt if running interactively and not -WhatIf
+if (-not $WhatIfPreference -and $Host.UI.RawUI -and $Host.Name -ne 'ServerRemoteHost') {
+    Write-Host $DestructiveExplanation -ForegroundColor Yellow
+    $choice = Read-Host "Run in [S]tandard (safe) or [D]estructive (dangerous) mode? [S/D] (default: S)"
+    if ($choice -match '^[Dd]') {
+        $DestructiveMode = $true
+        Write-Host "Destructive mode ENABLED. Proceeding with all operations." -ForegroundColor Red
+    }
+    else {
+        Write-Host "Standard (safe) mode selected. Destructive steps will be skipped or require extra confirmation." -ForegroundColor Green
+    }
+}
+else {
+    # Non-interactive or WhatIf: default to Standard
+    $DestructiveMode = $false
+}
 
 # ---------------------- Windows Update (optional) ----------------------
 if ($RunWindowsUpdate) {
@@ -175,7 +207,9 @@ if ($RunWindowsUpdate) {
 
 # ---------------------- Disk Health & Cleanup ---------------------------
 
-Invoke-Step -Title 'CHKDSK read-only scan and schedule repair if needed' -ScriptBlock {
+
+# --- Safer Disk Check Section ---
+Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
     try {
         $sysDrive = "$($env:SystemDrive)"
         Write-Output "Running read-only CHKDSK scan on $sysDrive..."
@@ -185,11 +219,42 @@ Invoke-Step -Title 'CHKDSK read-only scan and schedule repair if needed' -Script
             Write-Output "No disk errors detected on $sysDrive."
         }
         elseif ($chkdsk -match 'Windows found problems') {
-            Write-Output 'Errors found. Scheduling repair on next reboot.'
-            if (Confirm-Action -Target "Schedule CHKDSK repair on $sysDrive" -Action "Schedule CHKDSK /F /R") {
+            Write-Output 'Disk errors were found!'
+            # Try to extract affected files/sectors from CHKDSK output
+            $affectedFiles = @()
+            $affectedSectors = @()
+            $lines = $chkdsk -split "`r?`n"
+            foreach ($line in $lines) {
+                if ($line -match 'File (.+) is cross-linked') {
+                    $affectedFiles += $Matches[1]
+                }
+                if ($line -match 'bad sectors') {
+                    $affectedSectors += $line
+                }
+                if ($line -match 'Recovering orphaned file (.+) into directory') {
+                    $affectedFiles += $Matches[1]
+                }
+            }
+            if ($affectedFiles.Count -gt 0) {
+                Write-Host "The following files may be affected and should be backed up if possible:" -ForegroundColor Yellow
+                $affectedFiles | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
+            } else {
+                Write-Host "CHKDSK did not list specific affected files. Please review the above output for details." -ForegroundColor Yellow
+            }
+            if ($affectedSectors.Count -gt 0) {
+                Write-Host "CHKDSK reported bad sectors: " -ForegroundColor Yellow
+                $affectedSectors | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
+            }
+            Write-Host "Please back up any important files before continuing." -ForegroundColor Yellow
+            $null = Read-Host "Press Enter to continue with disk cleanup or Ctrl+C to abort"
+            # After user review, offer to schedule repair
+            $scheduleRepair = Read-Host "Would you like to schedule a disk repair on next reboot? [y/N]"
+            if ($scheduleRepair -match '^[Yy]') {
                 $repairOutput = cmd /c "chkdsk $sysDrive /F /R" 2>&1 | Out-String
                 Write-Output $repairOutput
                 Write-Output 'Repair scheduled. A reboot will be required to complete the repair.'
+            } else {
+                Write-Output 'Disk repair was not scheduled. Proceeding with maintenance.'
             }
         }
         else {
@@ -201,74 +266,76 @@ Invoke-Step -Title 'CHKDSK read-only scan and schedule repair if needed' -Script
     }
 }
 
-Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Clean temporary and cache files' -ScriptBlock {
-    try {
-        $paths = @($env:TEMP, "$env:WINDIR\Temp", "$env:LOCALAPPDATA\Temp") | Where-Object { Test-Path $_ }
-        $threshold = (Get-Date).AddDays(-1 * [int]$MaxTempFileAgeDays)
+if ($DestructiveMode) {
+    Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Clean temporary and cache files' -ScriptBlock {
+        try {
+            $paths = @($env:TEMP, "$env:WINDIR\Temp", "$env:LOCALAPPDATA\Temp") | Where-Object { Test-Path $_ }
+            $threshold = (Get-Date).AddDays(-1 * [int]$MaxTempFileAgeDays)
 
-        foreach ($p in $paths) {
-            Write-Output "Cleaning: $p"
-            # Confirm at directory level for better performance
-            if (Confirm-Action -Target "Delete old files in $p" -Action 'Delete files') {
-                Get-ChildItem -LiteralPath $p -Recurse -Force -ErrorAction SilentlyContinue |
-                Where-Object { -not $_.PSIsContainer -and $_.LastWriteTime -lt $threshold } |
-                ForEach-Object {
-                    Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+            foreach ($p in $paths) {
+                Write-Output "Cleaning: $p"
+                # Confirm at directory level for better performance
+                if ($PSCmdlet.ShouldProcess("Delete old files in $p", 'Delete files')) {
+                    Get-ChildItem -LiteralPath $p -Recurse -Force -ErrorAction SilentlyContinue |
+                    Where-Object { -not $_.PSIsContainer -and $_.LastWriteTime -lt $threshold } |
+                    ForEach-Object {
+                        Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+                    }
                 }
             }
-        }
 
-        # Windows Update download cache
-        $wuCache = "$env:WINDIR\SoftwareDistribution\Download"
-        if (Test-Path $wuCache) {
-            if (Confirm-Action -Target 'Windows Update download cache' -Action 'Clear cache') {
-                # Stop services using proper PowerShell cmdlets
-                $wuService = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
-                $bitsService = Get-Service -Name bits -ErrorAction SilentlyContinue
+            # Windows Update download cache
+            $wuCache = "$env:WINDIR\SoftwareDistribution\Download"
+            if (Test-Path $wuCache) {
+                if (Confirm-Action -Target 'Windows Update download cache' -Action 'Clear cache') {
+                    # Stop services using proper PowerShell cmdlets
+                    $wuService = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
+                    $bitsService = Get-Service -Name bits -ErrorAction SilentlyContinue
 
-                $wuWasRunning = $false
-                $bitsWasRunning = $false
+                    $wuWasRunning = $false
+                    $bitsWasRunning = $false
 
-                if ($wuService -and $wuService.Status -eq 'Running') {
-                    $wuWasRunning = $true
-                    Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
-                    Write-Output 'Stopped Windows Update service'
-                }
+                    if ($wuService -and $wuService.Status -eq 'Running') {
+                        $wuWasRunning = $true
+                        Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
+                        Write-Output 'Stopped Windows Update service'
+                    }
 
-                if ($bitsService -and $bitsService.Status -eq 'Running') {
-                    $bitsWasRunning = $true
-                    Stop-Service -Name bits -Force -ErrorAction SilentlyContinue
-                    Write-Output 'Stopped BITS service'
-                }
+                    if ($bitsService -and $bitsService.Status -eq 'Running') {
+                        $bitsWasRunning = $true
+                        Stop-Service -Name bits -Force -ErrorAction SilentlyContinue
+                        Write-Output 'Stopped BITS service'
+                    }
 
-                Get-ChildItem $wuCache -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Output 'Cleared Windows Update download cache'
+                    Get-ChildItem $wuCache -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Output 'Cleared Windows Update download cache'
 
-                # Restart services if they were running
-                if ($bitsWasRunning) {
-                    Start-Service -Name bits -ErrorAction SilentlyContinue
-                    Write-Output 'Restarted BITS service'
-                }
+                    # Restart services if they were running
+                    if ($bitsWasRunning) {
+                        Start-Service -Name bits -ErrorAction SilentlyContinue
+                        Write-Output 'Restarted BITS service'
+                    }
 
-                if ($wuWasRunning) {
-                    Start-Service -Name wuauserv -ErrorAction SilentlyContinue
-                    Write-Output 'Restarted Windows Update service'
+                    if ($wuWasRunning) {
+                        Start-Service -Name wuauserv -ErrorAction SilentlyContinue
+                        Write-Output 'Restarted Windows Update service'
+                    }
                 }
             }
-        }
 
-        # Delivery Optimization
-        $doPath = "$env:ProgramData\Microsoft\Windows\DeliveryOptimization\Cache"
-        if (Test-Path $doPath) {
-            if (Confirm-Action -Target 'Delivery Optimization cache' -Action 'Clear cache') {
-                Get-ChildItem $doPath -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Output 'Cleared Delivery Optimization cache'
+            # Delivery Optimization
+            $doPath = "$env:ProgramData\Microsoft\Windows\DeliveryOptimization\Cache"
+            if (Test-Path $doPath) {
+                if (Confirm-Action -Target 'Delivery Optimization cache' -Action 'Clear cache') {
+                    Get-ChildItem $doPath -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Output 'Cleared Delivery Optimization cache'
+                }
             }
+            Write-Output 'Disk cleanup completed.'
         }
-        Write-Output 'Disk cleanup completed.'
-    }
-    catch {
-        Write-Output "Disk cleanup error: $($_.Exception.Message)"
+        catch {
+            Write-Output "Disk cleanup error: $($_.Exception.Message)"
+        }
     }
 }
 
@@ -280,7 +347,8 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
             Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
                 $physicalDisks[$_.Number] = $_
             }
-        } catch {
+        }
+        catch {
             Write-Output 'Unable to query physical disks. Will use default optimization method.'
         }
 
@@ -302,7 +370,8 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
                         $isSSD = ($physDisk.MediaType -eq 'SSD')
                     }
                 }
-            } catch {
+            }
+            catch {
                 Write-Output "Could not determine disk type for ${letter}:, using default optimization"
             }
 
@@ -393,7 +462,8 @@ Invoke-Step -Title 'Network reset (soft) and DNS flush' -Destructive -ConfirmTar
         Write-Output 'Resetting IP configuration...'
         netsh int ip reset
         Write-Output 'Network reset completed. A reboot may be required for changes to take full effect.'
-    } catch {
+    }
+    catch {
         "Network reset error: $($_.Exception.Message)"
     }
 }
