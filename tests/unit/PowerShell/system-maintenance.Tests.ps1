@@ -34,30 +34,26 @@ Describe "system-maintenance.ps1" {
         }
         $scriptPathCandidate = Join-Path $scriptsRoot "PowerShell/system-administration/maintenance/system-maintenance.ps1"
         if (-not (Test-Path $scriptPathCandidate)) {
-            # Try absolute path as fallback
-            $scriptPathCandidate = "F:\April\Scripts\PowerShell\system-administration\maintenance\system-maintenance.ps1"
-            if (-not (Test-Path $scriptPathCandidate)) {
-                throw "Script not found at: $scriptPathCandidate"
-            }
+            throw "Script not found at: $scriptPathCandidate. Ensure SCRIPTS_ROOT is set correctly or run from repository root."
         }
         $script:scriptPath = Resolve-Path $scriptPathCandidate | Select-Object -ExpandProperty Path
     }
     Context "Basic Script Validation" {
         It "should be a valid script file" {
-            Test-Path -Path $scriptPath | Should Be $true
+            Test-Path -Path $scriptPath | Should -Be $true
         }
 
         It "should have comment-based help" {
             $help = Get-Help $scriptPath -ErrorAction SilentlyContinue
             $notNull = $false
             if ($help -and $help.Name -eq 'system-maintenance.ps1') { $notNull = $true }
-            $notNull | Should Be $true
+            $notNull | Should -Be $true
         }
 
         It "should support -WhatIf" {
             # For scripts, -WhatIf is not a formal parameter, but script logic should handle it
             $content = Get-Content -Path $scriptPath -Raw
-            ($content -like '*WhatIf*') | Should Be $true
+            ($content -like '*WhatIf*') | Should -Be $true
         }
     }
 
@@ -71,7 +67,7 @@ Describe "system-maintenance.ps1" {
                 $threw = $false
             }
             catch { $threw = $true }
-            $threw | Should Be $true
+            $threw | Should -Be $true
         }
 
         It "should reject MaxTempFileAgeDays above maximum (> 3650)" {
@@ -81,7 +77,7 @@ Describe "system-maintenance.ps1" {
                 $threw = $false
             }
             catch { $threw = $true }
-            $threw | Should Be $true
+            $threw | Should -Be $true
         }
 
         It "should reject non-numeric MaxTempFileAgeDays" {
@@ -91,7 +87,7 @@ Describe "system-maintenance.ps1" {
                 $threw = $false
             }
             catch { $threw = $true }
-            $threw | Should Be $true
+            $threw | Should -Be $true
         }
     }
 
@@ -100,7 +96,7 @@ Describe "system-maintenance.ps1" {
     Context "Permissions and Prerequisites" {
         It "should have #Requires -RunAsAdministrator directive" {
             $content = Get-Content -Path $scriptPath -Raw
-            $content -match '#Requires\s+-RunAsAdministrator' | Should Be $true
+            $content -match '#Requires\s+-RunAsAdministrator' | Should -Be $true
         }
 
         # Note: Testing actual permission failures requires running in a non-admin context,
@@ -118,7 +114,7 @@ Describe "system-maintenance.ps1" {
             foreach ($attr in $command.Parameters['MaxTempFileAgeDays'].Attributes) {
                 if ($attr -is [System.Management.Automation.ParameterAttribute]) { $count++ }
             }
-            ($count -gt 0) | Should Be $true
+            ($count -gt 0) | Should -Be $true
         }
     }
 
@@ -128,38 +124,38 @@ Describe "system-maintenance.ps1" {
             $cmdletBinding = $command.ScriptBlock.Attributes | Where-Object { $_ -is [System.Management.Automation.CmdletBindingAttribute] }
             $hasImpact = $false
             if ($cmdletBinding -and $cmdletBinding.ConfirmImpact) { $hasImpact = $true }
-            $hasImpact | Should Be $true
+            $hasImpact | Should -Be $true
         }
     }
 
     Context "Logging and Output" {
         It "should create log file path using Get-LogFilePath function" {
             $content = Get-Content -Path $scriptPath -Raw
-            ($content -like '*function Get-LogFilePath*') | Should Be $true
+            ($content -like '*function Get-LogFilePath*') | Should -Be $true
         }
 
         It "should handle environment where MyDocuments is not available" {
             $content = Get-Content -Path $scriptPath -Raw
-            ($content -like '*IsNullOrWhiteSpace*userDocs*') | Should Be $true
-            ($content -like '*GetTempPath*') | Should Be $true
+            ($content -like '*IsNullOrWhiteSpace*userDocs*') | Should -Be $true
+            ($content -like '*GetTempPath*') | Should -Be $true
         }
     }
 
     Context "Error Handling" {
         It "should use StrictMode" {
             $content = Get-Content -Path $scriptPath -Raw
-            ($content -like '*Set-StrictMode*Latest*') | Should Be $true
+            ($content -like '*Set-StrictMode*Latest*') | Should -Be $true
         }
 
         It "should set ErrorActionPreference appropriately" {
             $content = Get-Content -Path $scriptPath -Raw
-            ($content -like '*$ErrorActionPreference*Stop*') | Should Be $true
+            ($content -like '*$ErrorActionPreference*Stop*') | Should -Be $true
         }
 
         It "should include try-catch blocks for error handling" {
             $content = Get-Content -Path $scriptPath -Raw
             $tryCount = ($content -split 'try\s*\{').Count
-            ($tryCount -gt 5) | Should Be $true
+            ($tryCount -gt 5) | Should -Be $true
         }
     }
 }
