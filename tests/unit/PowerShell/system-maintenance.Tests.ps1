@@ -119,8 +119,6 @@ Describe "system-maintenance.ps1" {
         }
     }
 
-    # Context "Edge Cases" removed: requires admin rights
-
     Context "Permissions and Prerequisites" {
         It "should have #Requires -RunAsAdministrator directive" {
             $content = Get-Content -Path $scriptPath -Raw
@@ -145,8 +143,6 @@ Describe "system-maintenance.ps1" {
         # 2. Mocking the module import (complex in Pester 5 for external scripts)
         # This demonstrates the dependency is optional and only loaded when needed
     }
-
-    # Context "Dependencies" removed: requires admin rights
 
     Context "Parameter Validation" {
         It "should use default value when MaxTempFileAgeDays not specified" {

@@ -31,6 +31,10 @@
     .\system-maintenance.ps1 -RunWindowsUpdate -MaxTempFileAgeDays 14
 
 .EXAMPLE
+    .\system-maintenance.ps1 -DestructiveMode -WhatIf
+    Preview destructive operations in non-interactive mode.
+
+.EXAMPLE
     .\system-maintenance.ps1 -WhatIf
     Preview all destructive operations without executing them.
 
@@ -217,12 +221,12 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
             }
             Write-Host "Please back up any important files before continuing." -ForegroundColor Yellow
             # Use ShouldContinue for non-interactive compatibility
-            if (-not $PSCmdlet.ShouldContinue("Continue with disk cleanup after reviewing disk errors?", "Disk errors were found on $sysDrive")) {
+            if (-not $script:ScriptPSCmdlet.ShouldContinue("Continue with disk cleanup after reviewing disk errors?", "Disk errors were found on $sysDrive")) {
                 Write-Output "User chose not to continue with disk cleanup. Exiting maintenance."
                 return
             }
             # After user review, offer to schedule repair
-            if ($PSCmdlet.ShouldContinue("Schedule a disk repair on next reboot?", "CHKDSK repair")) {
+            if ($script:ScriptPSCmdlet.ShouldContinue("Schedule a disk repair on next reboot?", "CHKDSK repair")) {
                 $repairOutput = cmd /c "chkdsk $sysDrive /F /R" 2>&1 | Out-String
                 Write-Output $repairOutput
                 Write-Output 'Repair scheduled. A reboot will be required to complete the repair.'
@@ -259,7 +263,7 @@ Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Cle
             # Windows Update download cache
             $wuCache = "$env:WINDIR\SoftwareDistribution\Download"
             if (Test-Path $wuCache) {
-                if ($PSCmdlet.ShouldProcess('Windows Update download cache', 'Clear cache')) {
+                if ($script:ScriptPSCmdlet.ShouldProcess('Windows Update download cache', 'Clear cache')) {
                     # Stop services using proper PowerShell cmdlets
                     $wuService = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
                     $bitsService = Get-Service -Name bits -ErrorAction SilentlyContinue
@@ -298,7 +302,7 @@ Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Cle
             # Delivery Optimization
             $doPath = "$env:ProgramData\Microsoft\Windows\DeliveryOptimization\Cache"
             if (Test-Path $doPath) {
-                if ($PSCmdlet.ShouldProcess('Delivery Optimization cache', 'Clear cache')) {
+                if ($script:ScriptPSCmdlet.ShouldProcess('Delivery Optimization cache', 'Clear cache')) {
                     Get-ChildItem $doPath -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
                     Write-Output 'Cleared Delivery Optimization cache'
                 }
@@ -347,13 +351,13 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
             }
 
             if ($isSSD) {
-                if ($PSCmdlet.ShouldProcess("${letter}: (SSD)", 'ReTrim volume')) {
+                if ($script:ScriptPSCmdlet.ShouldProcess("${letter}: (SSD)", 'ReTrim volume')) {
                     Optimize-Volume -DriveLetter $letter -ReTrim -Verbose:$false | Out-Null
                     Write-Output "Trimmed ${letter}: (SSD)"
                 }
             }
             else {
-                if ($PSCmdlet.ShouldProcess("${letter}: (HDD)", 'Defragment volume')) {
+                if ($script:ScriptPSCmdlet.ShouldProcess("${letter}: (HDD)", 'Defragment volume')) {
                     Optimize-Volume -DriveLetter $letter -Defrag -Verbose:$false | Out-Null
                     Write-Output "Defragmented ${letter}: (HDD)"
                 }
@@ -389,7 +393,7 @@ Invoke-Step -Title 'Service health checks (BITS, wuauserv, CryptSvc)' -ScriptBlo
             if ($null -ne $svc) {
                 Write-Output ("{0}: {1}" -f $svc.Name, $svc.Status)
                 if ($svc.Status -ne 'Running') {
-                    if ($PSCmdlet.ShouldProcess($svc.Name, 'Start service')) {
+                    if ($script:ScriptPSCmdlet.ShouldProcess($svc.Name, 'Start service')) {
                         Start-Service $svc -ErrorAction SilentlyContinue
                         Write-Output "Started service: $($svc.Name)"
                     }
