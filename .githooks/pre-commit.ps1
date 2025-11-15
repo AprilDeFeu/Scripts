@@ -22,6 +22,8 @@ if (Test-Path $testPath) {
     $config.TestResult.OutputPath = $resultsPath
     $config.TestResult.OutputFormat = 'JUnitXml'
 
+    # Ensure the results directory exists before running Pester
+    New-Item -ItemType Directory -Path (Split-Path $resultsPath -Parent) -Force -ErrorAction SilentlyContinue
     $result = Invoke-Pester -Configuration $config
 
     if ($result.FailedCount -gt 0) {
