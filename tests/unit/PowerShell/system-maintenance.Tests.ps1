@@ -45,9 +45,8 @@ Describe "system-maintenance.ps1" {
 
         It "should have comment-based help" {
             $help = Get-Help $scriptPath -ErrorAction SilentlyContinue
-            $notNull = $false
-            if ($help -and $help.Name -eq 'system-maintenance.ps1') { $notNull = $true }
-            $notNull | Should -Be $true
+            $help | Should -Not -BeNullOrEmpty
+            $help.Name | Should -Be 'system-maintenance.ps1'
         }
 
         It "should support -WhatIf" {
@@ -91,7 +90,34 @@ Describe "system-maintenance.ps1" {
         }
     }
 
-    # Context "Edge Cases" removed: requires admin rights
+    Context "Edge Cases" {
+        It "should handle MaxTempFileAgeDays = 0 (delete all temp files)" {
+            $localPath = $scriptPath
+            { & $localPath -MaxTempFileAgeDays 0 -WhatIf } | Should -Not -Throw
+        }
+
+        It "should handle MaxTempFileAgeDays at upper boundary (3650 days)" {
+            $localPath = $scriptPath
+            { & $localPath -MaxTempFileAgeDays 3650 -WhatIf } | Should -Not -Throw
+        }
+
+        It "should handle MaxTempFileAgeDays = 1 (minimum practical value)" {
+            $localPath = $scriptPath
+            { & $localPath -MaxTempFileAgeDays 1 -WhatIf } | Should -Not -Throw
+        }
+
+        It "should handle RunWindowsUpdate switch with WhatIf" {
+            $localPath = $scriptPath
+            # WhatIf prevents actual Windows Update operations
+            { & $localPath -RunWindowsUpdate -WhatIf } | Should -Not -Throw
+        }
+
+        It "should handle DestructiveMode switch with WhatIf" {
+            $localPath = $scriptPath
+            # WhatIf prevents actual destructive operations
+            { & $localPath -DestructiveMode -WhatIf } | Should -Not -Throw
+        }
+    }
 
     Context "Permissions and Prerequisites" {
         It "should have #Requires -RunAsAdministrator directive" {
@@ -105,16 +131,23 @@ Describe "system-maintenance.ps1" {
         # handled by PowerShell itself.
     }
 
-    # Context "Dependencies" removed: requires admin rights
+    Context "Dependencies" {
+        It "should gracefully handle missing PSWindowsUpdate module when not requested" {
+            $localPath = $scriptPath
+            # When RunWindowsUpdate is not specified, the script should not attempt to use the module
+            { & $localPath -WhatIf } | Should -Not -Throw
+        }
+
+        # Note: Testing the RunWindowsUpdate path would require either:
+        # 1. Installing PSWindowsUpdate (which the script does automatically if missing)
+        # 2. Mocking the module import (complex in Pester 5 for external scripts)
+        # This demonstrates the dependency is optional and only loaded when needed
+    }
 
     Context "Parameter Validation" {
         It "should use default value when MaxTempFileAgeDays not specified" {
             $command = Get-Command -Name $scriptPath
-            $count = 0
-            foreach ($attr in $command.Parameters['MaxTempFileAgeDays'].Attributes) {
-                if ($attr -is [System.Management.Automation.ParameterAttribute]) { $count++ }
-            }
-            ($count -gt 0) | Should -Be $true
+            $command.Parameters['MaxTempFileAgeDays'].Attributes.Where({$_ -is [System.Management.Automation.ParameterAttribute]}).Count | Should -BeGreaterThan 0
         }
     }
 

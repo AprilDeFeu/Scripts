@@ -11,6 +11,9 @@ if (Test-Path $testPath) {
     # Set SCRIPTS_ROOT environment variable for tests
     $env:SCRIPTS_ROOT = (Get-Location).Path
 
+    # Ensure the results directory exists before running Pester
+    New-Item -ItemType Directory -Path (Split-Path $resultsPath -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
+
     # Use Pester v5 configuration syntax
     $config = New-PesterConfiguration
     $config.Run.Path = $testPath
@@ -33,4 +36,9 @@ if (Test-Path $testPath) {
         Write-Host "Test results not found, aborting commit."
         exit 1
     }
+}
+else {
+    Write-Host "Test file not found: $testPath"
+    Write-Host "Cannot verify script quality. Aborting commit."
+    exit 1
 }

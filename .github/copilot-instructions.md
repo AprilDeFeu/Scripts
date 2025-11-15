@@ -264,3 +264,10 @@ This repository prefers:
 - Create pull requests via GitHub web UI
 - Avoid using `gh` CLI in automation
 - Refer to `.github/PR_PREFERENCES.md` for detailed workflow guidance
+
+## Copilot PR Review Policy
+
+**IMPORTANT**: Do NOT automatically review pull requests when they are marked as "ready for review".
+- Only perform PR reviews when explicitly requested by tagging @copilot in a comment
+- Premium review requests should be used wisely and deliberately
+- Wait for manual request before analyzing or reviewing code changes
