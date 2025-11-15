@@ -38,7 +38,7 @@ jobs:
         id: check_results
         shell: pwsh
         run: |
-          $resultsPath = 'tests/results/system-maintenance.json'
+          $resultsPath = 'tests/results/system-maintenance.xml'
           if (Test-Path $resultsPath) {
             $fileAge = (Get-Date) - (Get-Item $resultsPath).LastWriteTime
             if ($fileAge.TotalDays -lt 2) {
