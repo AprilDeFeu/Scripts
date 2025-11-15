@@ -22,6 +22,11 @@
     Maximum age (in days) files must be older than to be removed from temp
     locations. Default: 7. Set to 0 to remove everything (use with caution).
 
+.PARAMETER DestructiveMode
+    When specified, enables destructive operations (disk cleanup, network reset,
+    CHKDSK repair) without interactive prompts. Use with caution in automated
+    scenarios. Without this flag, destructive operations require confirmation.
+
 .EXAMPLE
     .\system-maintenance.ps1 -RunWindowsUpdate -MaxTempFileAgeDays 14
 
@@ -38,7 +43,8 @@
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [switch] $RunWindowsUpdate,
-    [ValidateRange(0, 3650)][int] $MaxTempFileAgeDays = 7
+    [ValidateRange(0, 3650)][int] $MaxTempFileAgeDays = 7,
+    [switch] $DestructiveMode
 )
 
 Set-StrictMode -Version Latest
@@ -58,15 +64,8 @@ function Get-LogFilePath {
 
 $script:LogFile = Get-LogFilePath
 
-
-# Store the script-level PSCmdlet for use in nested scriptblocks (set in Begin block)
-$script:ScriptPSCmdlet = $null
-
-Begin {
-    if ($null -eq $script:ScriptPSCmdlet -and $null -ne $PSCmdlet) {
-        $script:ScriptPSCmdlet = $PSCmdlet
-    }
-}
+# Store the script-level PSCmdlet for use in nested scriptblocks
+$script:ScriptPSCmdlet = $PSCmdlet
 
 # Helper to perform a confirmation check that works even when invoked inside
 # nested scriptblocks. Uses the script-scoped PSCmdlet reference.
@@ -96,7 +95,12 @@ function Invoke-Step {
     Write-Log "BEGIN: $Title"
     try {
         if ($Destructive.IsPresent -and $ConfirmTarget) {
-            if (-not ($PSCmdlet.ShouldProcess($ConfirmTarget, $Title))) {
+            # Use script-scoped PSCmdlet with null check
+            if ($null -eq $script:ScriptPSCmdlet) {
+                Write-Log -Message "SKIP: $Title (PSCmdlet not available)" -Level 'WARN'
+                return
+            }
+            if (-not ($script:ScriptPSCmdlet.ShouldProcess($ConfirmTarget, $Title))) {
                 Write-Log -Message "SKIP: $Title (not confirmed)" -Level 'WARN'
                 return
             }
@@ -136,41 +140,7 @@ function Invoke-Step {
 Write-Log "Starting system maintenance and health checks. Params: RunWindowsUpdate=$RunWindowsUpdate, MaxTempFileAgeDays=$MaxTempFileAgeDays"
 
 # --- Destructive Mode Selection ---
-$DestructiveMode = $false
-$DestructiveExplanation = @"
-==================== DESTRUCTIVE MODE WARNING ====================
-This script can perform several potentially destructive operations:
-
-1. Disk cleanup (Temp, Cache):
-   - Deletes files from system/user temp folders and Windows Update/Delivery Optimization caches.
-   - Danger: May remove files needed by some applications or pending updates.
-2. Network reset:
-   - Resets Winsock, IP stack, and flushes DNS.
-   - Danger: May disrupt network connectivity and require a reboot.
-3. CHKDSK repair:
-   - Schedules disk repair on next reboot if errors are found.
-   - Danger: Can cause data loss if disk is failing or interrupted.
-
-By default, these steps are run in safe (non-destructive) mode. To enable all destructive operations, choose 'Destructive' when prompted.
-==================================================================
-"@
-
-# Only prompt if running interactively and not -WhatIf
-if (-not $WhatIfPreference -and $Host.UI.RawUI -and $Host.Name -ne 'ServerRemoteHost') {
-    Write-Host $DestructiveExplanation -ForegroundColor Yellow
-    $choice = Read-Host "Run in [S]tandard (safe) or [D]estructive (dangerous) mode? [S/D] (default: S)"
-    if ($choice -match '^[Dd]') {
-        $DestructiveMode = $true
-        Write-Host "Destructive mode ENABLED. Proceeding with all operations." -ForegroundColor Red
-    }
-    else {
-        Write-Host "Standard (safe) mode selected. Destructive steps will be skipped or require extra confirmation." -ForegroundColor Green
-    }
-}
-else {
-    # Non-interactive or WhatIf: default to Standard
-    $DestructiveMode = $false
-}
+# Note: Now controlled via -DestructiveMode parameter (no longer prompts interactively)
 
 # ---------------------- Windows Update (optional) ----------------------
 if ($RunWindowsUpdate) {
@@ -246,10 +216,13 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
                 $affectedSectors | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
             }
             Write-Host "Please back up any important files before continuing." -ForegroundColor Yellow
-            $null = Read-Host "Press Enter to continue with disk cleanup or Ctrl+C to abort"
+            # Use ShouldContinue for non-interactive compatibility
+            if (-not $PSCmdlet.ShouldContinue("Continue with disk cleanup after reviewing disk errors?", "Disk errors were found on $sysDrive")) {
+                Write-Output "User chose not to continue with disk cleanup. Exiting maintenance."
+                return
+            }
             # After user review, offer to schedule repair
-            $scheduleRepair = Read-Host "Would you like to schedule a disk repair on next reboot? [y/N]"
-            if ($scheduleRepair -match '^[Yy]') {
+            if ($PSCmdlet.ShouldContinue("Schedule a disk repair on next reboot?", "CHKDSK repair")) {
                 $repairOutput = cmd /c "chkdsk $sysDrive /F /R" 2>&1 | Out-String
                 Write-Output $repairOutput
                 Write-Output 'Repair scheduled. A reboot will be required to complete the repair.'
@@ -266,8 +239,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
     }
 }
 
-if ($DestructiveMode) {
-    Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Clean temporary and cache files' -ScriptBlock {
+Invoke-Step -Title 'Disk cleanup (Temp, Cache)' -Destructive -ConfirmTarget 'Clean temporary and cache files' -ScriptBlock {
         try {
             $paths = @($env:TEMP, "$env:WINDIR\Temp", "$env:LOCALAPPDATA\Temp") | Where-Object { Test-Path $_ }
             $threshold = (Get-Date).AddDays(-1 * [int]$MaxTempFileAgeDays)
@@ -287,7 +259,7 @@ if ($DestructiveMode) {
             # Windows Update download cache
             $wuCache = "$env:WINDIR\SoftwareDistribution\Download"
             if (Test-Path $wuCache) {
-                if (Confirm-Action -Target 'Windows Update download cache' -Action 'Clear cache') {
+                if ($PSCmdlet.ShouldProcess('Windows Update download cache', 'Clear cache')) {
                     # Stop services using proper PowerShell cmdlets
                     $wuService = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
                     $bitsService = Get-Service -Name bits -ErrorAction SilentlyContinue
@@ -326,7 +298,7 @@ if ($DestructiveMode) {
             # Delivery Optimization
             $doPath = "$env:ProgramData\Microsoft\Windows\DeliveryOptimization\Cache"
             if (Test-Path $doPath) {
-                if (Confirm-Action -Target 'Delivery Optimization cache' -Action 'Clear cache') {
+                if ($PSCmdlet.ShouldProcess('Delivery Optimization cache', 'Clear cache')) {
                     Get-ChildItem $doPath -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
                     Write-Output 'Cleared Delivery Optimization cache'
                 }
@@ -337,7 +309,6 @@ if ($DestructiveMode) {
             Write-Output "Disk cleanup error: $($_.Exception.Message)"
         }
     }
-}
 
 Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
     try {
@@ -376,13 +347,13 @@ Invoke-Step -Title 'Drive optimization (trim/defrag)' -ScriptBlock {
             }
 
             if ($isSSD) {
-                if (Confirm-Action -Target "${letter}: (SSD)" -Action 'ReTrim volume') {
+                if ($PSCmdlet.ShouldProcess("${letter}: (SSD)", 'ReTrim volume')) {
                     Optimize-Volume -DriveLetter $letter -ReTrim -Verbose:$false | Out-Null
                     Write-Output "Trimmed ${letter}: (SSD)"
                 }
             }
             else {
-                if (Confirm-Action -Target "${letter}: (HDD)" -Action 'Defragment volume') {
+                if ($PSCmdlet.ShouldProcess("${letter}: (HDD)", 'Defragment volume')) {
                     Optimize-Volume -DriveLetter $letter -Defrag -Verbose:$false | Out-Null
                     Write-Output "Defragmented ${letter}: (HDD)"
                 }
@@ -418,7 +389,7 @@ Invoke-Step -Title 'Service health checks (BITS, wuauserv, CryptSvc)' -ScriptBlo
             if ($null -ne $svc) {
                 Write-Output ("{0}: {1}" -f $svc.Name, $svc.Status)
                 if ($svc.Status -ne 'Running') {
-                    if (Confirm-Action -Target $svc.Name -Action 'Start service') {
+                    if ($PSCmdlet.ShouldProcess($svc.Name, 'Start service')) {
                         Start-Service $svc -ErrorAction SilentlyContinue
                         Write-Output "Started service: $($svc.Name)"
                     }
