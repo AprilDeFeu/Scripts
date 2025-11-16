@@ -35,7 +35,7 @@ if (Test-Path $testPath) {
         Write-Information "Test results saved to: $resultsPath"
     }
     else {
-        Write-Host "Test results not found, aborting commit."
+        Write-Information "Test results not found, aborting commit."
         exit 1
     }
 }
