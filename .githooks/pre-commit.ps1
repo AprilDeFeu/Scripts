@@ -32,7 +32,7 @@ if (Test-Path $testPath) {
     }
 
     if (Test-Path $resultsPath) {
-        Write-Host "Test results saved to: $resultsPath"
+        Write-Information "Test results saved to: $resultsPath"
     }
     else {
         Write-Host "Test results not found, aborting commit."
