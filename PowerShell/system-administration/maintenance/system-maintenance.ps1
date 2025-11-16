@@ -63,7 +63,7 @@ $script:LogFile = Get-LogFilePath
 # Store the script-level PSCmdlet for use in nested scriptblocks
 $script:ScriptPSCmdlet = $PSCmdlet
 
-# Custom logging function (named Write-MaintenanceLog to avoid conflict with built-in Write-MaintenanceLog in PS Core 6.1+)
+# Custom logging function (named Write-MaintenanceLog to avoid conflict with built-in Write-Log in PS Core 6.1+)
 function Write-MaintenanceLog {
     [CmdletBinding()]
     param(
