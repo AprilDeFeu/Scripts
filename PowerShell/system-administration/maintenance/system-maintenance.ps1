@@ -204,7 +204,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
             }
             if ($affectedFiles.Count -gt 0) {
                 Write-Host "The following files may be affected and should be backed up if possible:" -ForegroundColor Yellow
-                $affectedFiles | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
+                $affectedFiles | ForEach-Object { Write-Output $_ }
             } else {
                 Write-Host "CHKDSK did not list specific affected files. Please review the above output for details." -ForegroundColor Yellow
             }
