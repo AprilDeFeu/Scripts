@@ -40,7 +40,7 @@ if (Test-Path $testPath) {
     }
 }
 else {
-    Write-Host "Test file not found: $testPath"
+    Write-Output "Test file not found: $testPath"
     Write-Host "Cannot verify script quality. Aborting commit."
     exit 1
 }
