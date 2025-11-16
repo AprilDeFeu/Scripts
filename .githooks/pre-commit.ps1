@@ -6,7 +6,7 @@ $testPath = 'tests/unit/PowerShell/system-maintenance.Tests.ps1'
 $resultsPath = 'tests/results/system-maintenance.xml'
 
 if (Test-Path $testPath) {
-    Write-Host "Running Pester tests for $testScript..."
+    Write-Information "Running Pester tests for $testScript..."
 
     # Set SCRIPTS_ROOT environment variable for tests
     $env:SCRIPTS_ROOT = (Get-Location).Path
