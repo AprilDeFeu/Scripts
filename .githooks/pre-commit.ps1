@@ -27,7 +27,7 @@ if (Test-Path $testPath) {
     $result = Invoke-Pester -Configuration $config
 
     if ($result.FailedCount -gt 0) {
-        Write-Host "Tests failed. Aborting commit."
+        Write-Error "Tests failed. Aborting commit."
         exit 1
     }
 
