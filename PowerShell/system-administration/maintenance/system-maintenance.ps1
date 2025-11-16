@@ -206,7 +206,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
                 Write-Output "The following files may be affected and should be backed up if possible:" -ForegroundColor Yellow
                 $affectedFiles | ForEach-Object { Write-Output $_ }
             } else {
-                Write-Host "CHKDSK did not list specific affected files. Please review the above output for details." -ForegroundColor Yellow
+                Write-Information "CHKDSK did not list specific affected files. Please review the above output for details."
             }
             if ($affectedSectors.Count -gt 0) {
                 Write-Information "CHKDSK reported bad sectors: "
