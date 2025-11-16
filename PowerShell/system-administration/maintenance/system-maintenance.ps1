@@ -22,17 +22,10 @@
     Maximum age (in days) files must be older than to be removed from temp
     locations. Default: 7. Set to 0 to remove everything (use with caution).
 
-.PARAMETER DestructiveMode
-    When specified, enables destructive operations (disk cleanup, network reset,
-    CHKDSK repair) without interactive prompts. Use with caution in automated
-    scenarios. Without this flag, destructive operations require confirmation.
+
 
 .EXAMPLE
     .\system-maintenance.ps1 -RunWindowsUpdate -MaxTempFileAgeDays 14
-
-.EXAMPLE
-    .\system-maintenance.ps1 -DestructiveMode -WhatIf
-    Preview destructive operations in non-interactive mode.
 
 .EXAMPLE
     .\system-maintenance.ps1 -WhatIf
@@ -47,8 +40,7 @@
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [switch] $RunWindowsUpdate,
-    [ValidateRange(0, 3650)][int] $MaxTempFileAgeDays = 7,
-    [switch] $DestructiveMode
+    [ValidateRange(0, 3650)][int] $MaxTempFileAgeDays = 7
 )
 
 Set-StrictMode -Version Latest
@@ -71,9 +63,8 @@ $script:LogFile = Get-LogFilePath
 # Store the script-level PSCmdlet for use in nested scriptblocks
 $script:ScriptPSCmdlet = $PSCmdlet
 
-# Helper to perform a confirmation check that works even when invoked inside
-# nested scriptblocks. Uses the script-scoped PSCmdlet reference.
-function Write-Log {
+# Custom logging function (named Write-MaintenanceLog to avoid conflict with built-in Write-Log in PS Core 6.1+)
+function Write-MaintenanceLog {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string] $Message,
@@ -90,22 +81,23 @@ function Write-Log {
 }
 
 function Invoke-Step {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory = $true)][scriptblock] $ScriptBlock,
         [Parameter(Mandatory = $true)][string] $Title,
         [string] $ConfirmTarget,
         [switch] $Destructive
     )
-    Write-Log "BEGIN: $Title"
+    Write-MaintenanceLog "BEGIN: $Title"
     try {
         if ($Destructive.IsPresent -and $ConfirmTarget) {
             # Use script-scoped PSCmdlet with null check
             if ($null -eq $script:ScriptPSCmdlet) {
-                Write-Log -Message "SKIP: $Title (PSCmdlet not available)" -Level 'WARN'
+                Write-MaintenanceLog -Message "SKIP: $Title (PSCmdlet not available)" -Level 'WARN'
                 return
             }
             if (-not ($script:ScriptPSCmdlet.ShouldProcess($ConfirmTarget, $Title))) {
-                Write-Log -Message "SKIP: $Title (not confirmed)" -Level 'WARN'
+                Write-MaintenanceLog -Message "SKIP: $Title (not confirmed)" -Level 'WARN'
                 return
             }
         }
@@ -124,27 +116,28 @@ function Invoke-Step {
         # Log standard output
         if ($output.Count -gt 0) {
             $outputString = ($output | Out-String).Trim()
-            if ($outputString -ne '') { Write-Log $outputString }
+            if ($outputString -ne '') { Write-MaintenanceLog $outputString }
         }
 
         # Log errors separately
         if ($errors.Count -gt 0) {
             foreach ($err in $errors) {
-                Write-Log -Message "ERROR: $($err.Exception.Message)" -Level 'ERROR'
+                Write-MaintenanceLog -Message "ERROR: $($err.Exception.Message)" -Level 'ERROR'
             }
         }
 
-        Write-Log "END: $Title"
+        Write-MaintenanceLog "END: $Title"
     }
     catch {
-        Write-Log -Message "ERROR in ${Title}: $($_.Exception.Message)" -Level 'ERROR'
+        Write-MaintenanceLog -Message "ERROR in ${Title}: $($_.Exception.Message)" -Level 'ERROR'
     }
 }
 
-Write-Log "Starting system maintenance and health checks. Params: RunWindowsUpdate=$RunWindowsUpdate, MaxTempFileAgeDays=$MaxTempFileAgeDays"
+Write-MaintenanceLog "Starting system maintenance and health checks. Params: RunWindowsUpdate=$RunWindowsUpdate, MaxTempFileAgeDays=$MaxTempFileAgeDays"
 
-# --- Destructive Mode Selection ---
-# Note: Now controlled via -DestructiveMode parameter (no longer prompts interactively)
+# --- Destructive Operations ---
+# Destructive operations (disk cleanup, network reset, CHKDSK) use ShouldProcess
+# for confirmation and can be controlled with -WhatIf and -Confirm parameters.
 
 # ---------------------- Windows Update (optional) ----------------------
 if ($RunWindowsUpdate) {
@@ -454,5 +447,5 @@ Invoke-Step -Title 'Event Log: Critical/System errors (24h)' -ScriptBlock {
     try { $since = (Get-Date).AddDays(-1); Get-WinEvent -FilterHashtable @{LogName = 'System'; Level = 1; StartTime = $since } -ErrorAction SilentlyContinue | Select-Object TimeCreated, Id, ProviderName, LevelDisplayName, Message | Format-Table -AutoSize | Out-String } catch { "EventLog scan error: $($_.Exception.Message)" }
 }
 
-Write-Log "Maintenance completed. Review the log for details: $script:LogFile"
-Write-Log 'If CHKDSK or network resets were scheduled, please reboot to complete repairs.'
+Write-MaintenanceLog "Maintenance completed. Review the log for details: $script:LogFile"
+Write-MaintenanceLog 'If CHKDSK or network resets were scheduled, please reboot to complete repairs.'
