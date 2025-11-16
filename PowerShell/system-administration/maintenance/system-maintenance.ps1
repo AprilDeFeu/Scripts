@@ -209,7 +209,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
                 Write-Host "CHKDSK did not list specific affected files. Please review the above output for details." -ForegroundColor Yellow
             }
             if ($affectedSectors.Count -gt 0) {
-                Write-Host "CHKDSK reported bad sectors: " -ForegroundColor Yellow
+                Write-Information "CHKDSK reported bad sectors: "
                 $affectedSectors | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
             }
             Write-Host "Please back up any important files before continuing." -ForegroundColor Yellow
