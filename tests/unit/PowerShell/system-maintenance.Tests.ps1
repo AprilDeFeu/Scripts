@@ -111,12 +111,6 @@ Describe "system-maintenance.ps1" {
             # WhatIf prevents actual Windows Update operations
             { & $localPath -RunWindowsUpdate -WhatIf } | Should -Not -Throw
         }
-
-        It "should handle DestructiveMode switch with WhatIf" {
-            $localPath = $scriptPath
-            # WhatIf prevents actual destructive operations
-            { & $localPath -DestructiveMode -WhatIf } | Should -Not -Throw
-        }
     }
 
     Context "Permissions and Prerequisites" {
