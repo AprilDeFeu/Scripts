@@ -210,7 +210,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
             }
             if ($affectedSectors.Count -gt 0) {
                 Write-Information "CHKDSK reported bad sectors: "
-                $affectedSectors | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
+                $affectedSectors | ForEach-Object { Write-Output $_ }
             }
             Write-Output "Please back up any important files before continuing."
             # Use ShouldContinue for non-interactive compatibility
