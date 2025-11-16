@@ -212,7 +212,7 @@ Invoke-Step -Title 'CHKDSK read-only scan and user review' -ScriptBlock {
                 Write-Information "CHKDSK reported bad sectors: "
                 $affectedSectors | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
             }
-            Write-Host "Please back up any important files before continuing." -ForegroundColor Yellow
+            Write-Output "Please back up any important files before continuing."
             # Use ShouldContinue for non-interactive compatibility
             if (-not $script:ScriptPSCmdlet.ShouldContinue("Continue with disk cleanup after reviewing disk errors?", "Disk errors were found on $sysDrive")) {
                 Write-Output "User chose not to continue with disk cleanup. Exiting maintenance."
